@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
-const axios = require("axios"); // ✅ Import axios for API requests
+const axios = require("axios");
 const connectDB = require("./db"); 
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -45,12 +45,20 @@ console.log("mpesaRoutes:", mpesaRoutes ? "✅ Loaded" : "❌ Not Loaded");
 // ✅ M-Pesa Routes
 app.use("/mpesa", mpesaRoutes); // ✅ Register M-Pesa routes
 
-// ✅ M-Pesa Callback Route
+// ✅ Enhanced M-Pesa Callback Route with Validation and Logging
 app.post("/mpesa/callback", (req, res) => {
     console.log("🔔 M-Pesa Callback Received:", req.body);
+
+    // Validate callback body
+    if (!req.body.Body || !req.body.Body.stkCallback) {
+        return res.status(400).json({ message: "Invalid callback data" });
+    }
     
+    const { stkCallback } = req.body.Body;
+    console.log("✅ M-Pesa STK Callback Details:", stkCallback);
+
     // ✅ You can store the response in the database or process it as needed
-    res.status(200).json({ message: "M-Pesa Callback Received" });
+    res.status(200).json({ message: "M-Pesa Callback Processed Successfully" });
 });
 
 // ✅ Routes
