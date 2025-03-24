@@ -5,7 +5,7 @@ const consumerKey = process.env.MPESA_CONSUMER_KEY; // Consumer key
 const consumerSecret = process.env.MPESA_CONSUMER_SECRET; // Consumer secret
 const shortcode = "174379";  // Your Paybill or Till number
 const passkey = process.env.MPESA_PASSKEY;  // M-Pesa passkey
-const callbackURL = "https://d617-105-29-165-232.ngrok-free.app/mpesa/callback";  // Your Ngrok URL or backend URL
+const callbackURL = "https://f2e4-105-29-165-232.ngrok-free.app/mpesa/callback";  // Your Ngrok URL or backend URL
 
 // Function to generate M-Pesa access token
 const getAccessToken = async () => {
