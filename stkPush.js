@@ -1,13 +1,13 @@
 const axios = require("axios");
 
-const consumerKey = "YA1AnAZSOAHPUUKWzFASFITDfAF1If2wi0GCt5uSpnnIxIdc"; // Replace with your consumer key
-const consumerSecret = "qerFGsxTmDG4uDOvllAVLclbdYZT4lfN1gy6LAjCWGTX7vy88A8OHv2wZLIwveiM"; // Replace with your consumer secret
-const shortcode = "174379"; 
-const passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2c2cfc9137b9f48badd3b5db9f708f58"; 
-const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "").slice(0, 14);
-const password = Buffer.from(shortcode + passkey + timestamp).toString("base64");
+// Use environment variables for sensitive data
+const consumerKey = process.env.MPESA_CONSUMER_KEY; // Consumer key
+const consumerSecret = process.env.MPESA_CONSUMER_SECRET; // Consumer secret
+const shortcode = "174379";  // Your Paybill or Till number
+const passkey = process.env.MPESA_PASSKEY;  // M-Pesa passkey
+const callbackURL = "https://d617-105-29-165-232.ngrok-free.app/mpesa/callback";  // Your Ngrok URL or backend URL
 
-// Function to generate access token
+// Function to generate M-Pesa access token
 const getAccessToken = async () => {
   const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64");
   try {
@@ -22,23 +22,27 @@ const getAccessToken = async () => {
 };
 
 // STK Push request
-const stkPushRequest = async () => {
+const stkPushRequest = async (phone, amount) => {
   const accessToken = await getAccessToken(); // Get a fresh token
   if (!accessToken) {
     console.error("Failed to get access token");
     return;
   }
 
+  // Timestamp and password for M-Pesa security
+  const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "").slice(0, 14);
+  const password = Buffer.from(shortcode + passkey + timestamp).toString("base64");
+
   const requestData = {
     BusinessShortCode: shortcode,
     Password: password,
     Timestamp: timestamp,
     TransactionType: "CustomerPayBillOnline",
-    Amount: "10",
-    PartyA: "254702276873",
+    Amount: amount,  // Dynamic amount from client input
+    PartyA: phone,   // Dynamic phone number from client input
     PartyB: shortcode,
-    PhoneNumber: "254702276873",
-    CallBackURL: "https://d617-105-29-165-232.ngrok-free.app/mpesa/callback",
+    PhoneNumber: phone,  // Phone number to receive the STK push
+    CallBackURL: callbackURL,  // Replace with your actual callback URL
     AccountReference: "SwiftMart",
     TransactionDesc: "Payment for order"
   };
@@ -55,10 +59,11 @@ const stkPushRequest = async () => {
       }
     );
     console.log("STK Push Response:", response.data);
+    return response.data;
   } catch (error) {
-    console.error("Error:", error.response?.data || error.message);
+    console.error("Error processing STK Push:", error.response?.data || error.message);
   }
 };
 
-// Run function
-stkPushRequest();
+// Call stkPushRequest with dynamic data (for testing, pass phone and amount)
+stkPushRequest("254702276873", "50");  // Example phone and amount

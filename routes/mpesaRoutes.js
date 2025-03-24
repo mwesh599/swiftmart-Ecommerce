@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const dotenv = require("dotenv");
+const stkPush = require('../stkPush');
 
 dotenv.config();
 
@@ -48,7 +49,7 @@ router.post("/stkpush", async (req, res) => {
         PartyA: phone,
         PartyB: shortcode,
         PhoneNumber: phone,
-        CallBackURL: "https://your-ngrok-url/callback",
+        CallBackURL: "https://d617-105-29-165-232.ngrok-free.app/callback",
         AccountReference: "Test",
         TransactionDesc: "Payment"
     };
