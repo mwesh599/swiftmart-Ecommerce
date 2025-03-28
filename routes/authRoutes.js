@@ -1,8 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const  verifyToken  = require("../middleware/authMiddleware"); // ✅ Import Middleware
-const User = require("../models/User"); // ✅ Ensure correct User model import
+const verifyToken = require("../middleware/authMiddleware"); // ✅ Middleware
+const User = require("../models/User"); // ✅ Mongoose User model
 require("dotenv").config();
 
 const router = express.Router();
@@ -11,7 +11,7 @@ const router = express.Router();
 router.post("/register", async (req, res) => {
     try {
         let { name, email, password } = req.body;
-        email = email.toLowerCase(); // Normalize email
+        email = email.toLowerCase(); // ✅ Normalize email
 
         let user = await User.findOne({ email });
         if (user) {
@@ -30,11 +30,14 @@ router.post("/register", async (req, res) => {
     }
 });
 
-// ✅ User Login Route
+// ✅ User Login Route (Updated)
 router.post("/login", async (req, res) => {
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
+        email = email.toLowerCase(); // ✅ Normalize email before finding user
+
         const user = await User.findOne({ email });
+        console.log("🔍 Login attempt for:", email);
 
         if (!user) {
             return res.status(400).json({ message: "❌ Invalid email or password" });
@@ -45,11 +48,9 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ message: "❌ Invalid email or password" });
         }
 
-        // Construct the payload with 'id' instead of 'userId'
         const payload = {
-            id: user._id,  // Changed from userId to id
-            email: user.email, // You can include other user data if needed
-            // ... other user data ...
+            id: user._id,
+            email: user.email,
         };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
@@ -61,42 +62,27 @@ router.post("/login", async (req, res) => {
     }
 });
 
+// ✅ Protected Profile Route (Requires Token)
 router.get("/profile", verifyToken, async (req, res) => {
     try {
-        // Extract user ID from verified token
         const userId = req.user.id;
-        console.log("🔹 Extracted userId:", userId);
+        console.log("🔹 Extracted userId from token:", userId);
 
-        // Ensure userId is a valid MongoDB ObjectId
         if (!userId) {
             return res.status(400).json({ message: "❌ User ID missing from token" });
         }
 
-        // Find user in database
-        const user = await User.findById(userId).select("-password"); // Exclude password from response
+        const user = await User.findById(userId).select("-password"); // Exclude password
         console.log("🔹 Found User:", user);
 
         if (!user) {
-            return res.status(404).json({ message: "❌ No user found" });
+            return res.status(404).json({ message: "❌ User not found" });
         }
 
         res.status(200).json(user);
     } catch (error) {
         console.error("❌ Profile Fetch Error:", error);
         res.status(500).json({ message: "❌ Internal Server Error", error: error.message });
-    }
-});
-// ✅ Protected Profile Route (Requires Token)
-router.get("/profile", verifyToken, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.userId).select("-password"); // Exclude password
-        if (!user) {
-            return res.status(404).json({ message: "❌ User not found" });
-        }
-        res.status(200).json(user);
-    } catch (error) {
-        console.error("❌ Profile Error:", error.message);
-        res.status(500).json({ message: "Server error", error: error.message });
     }
 });
 
