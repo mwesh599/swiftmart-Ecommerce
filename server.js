@@ -20,8 +20,14 @@ connectDB().catch((err) => {
   process.exit(1);
 });
 
+// ✅ CORS configuration
+const corsOptions = {
+  origin: "http://localhost:3000",  // Allow the frontend (localhost:3000) to make requests
+  credentials: true,  // Allow credentials (cookies, authorization headers, etc.)
+};
+
 // ✅ Middleware
-app.use(cors());
+app.use(cors(corsOptions));  // Apply the CORS middleware with the specified options
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json());
@@ -31,7 +37,6 @@ app.use((req, res, next) => {
   console.log(`📥 ${req.method} ${req.originalUrl}`);
   next();
 });
-
 
 // ✅ Handle invalid JSON errors
 app.use((err, req, res, next) => {
@@ -96,6 +101,7 @@ process.on("unhandledRejection", (err) => {
   console.error(`❌ Unhandled Rejection: ${err.message}`);
   server.close(() => process.exit(1));
 });
+
 
 // ✅ Handle process termination (CTRL+C or kill command)
 process.on("SIGTERM", () => {
