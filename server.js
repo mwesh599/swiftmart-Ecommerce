@@ -3,13 +3,13 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
-const axios = require("axios");
-const connectDB = require("./db"); 
+const connectDB = require("./db");
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const mpesaRoutes = require("./routes/mpesaRoutes"); // ✅ Import M-Pesa routes
+
 
 dotenv.config();
 const app = express();
@@ -22,23 +22,26 @@ connectDB().catch((err) => {
 
 // ✅ CORS configuration
 const corsOptions = {
-  origin: "http://localhost:3000",  // Allow the frontend (localhost:3000) to make requests
-  credentials: true,  // Allow credentials (cookies, authorization headers, etc.)
+  origin: "http://localhost:3000", // Allow the frontend (localhost:3000) to make requests
+  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  optionsSuccessStatus: 200, // For legacy browsers
 };
+app.use(cors(corsOptions)); // Apply CORS middleware
 
 // ✅ Middleware
-app.use(cors(corsOptions));  // Apply the CORS middleware with the specified options
-app.use(helmet());
-app.use(morgan("dev"));
-app.use(express.json());
+app.use(helmet()); // Security headers
+app.use(morgan("dev")); // Request logging
+app.use(express.json()); // Parse incoming JSON requests
 
-// ✅ Log every incoming request (🔍 Debugging Middleware)
+// ✅ Debugging middleware to log incoming requests
 app.use((req, res, next) => {
-  console.log(`📥 ${req.method} ${req.originalUrl}`);
+  console.log(`📥 Incoming request: ${req.method} ${req.originalUrl}`);
   next();
 });
 
-// ✅ Handle invalid JSON errors
+
+
+// ✅ Handle invalid JSON payloads
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     return res.status(400).json({ message: "❌ Invalid JSON payload" });
@@ -46,7 +49,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// ✅ Debugging: Check if routes are imported properly
+// ✅ Debugging logs for routes
 console.log("🔍 Debugging Routes:");
 console.log("authRoutes:", authRoutes ? "✅ Loaded" : "❌ Not Loaded");
 console.log("productRoutes:", productRoutes ? "✅ Loaded" : "❌ Not Loaded");
@@ -54,43 +57,44 @@ console.log("cartRoutes:", cartRoutes ? "✅ Loaded" : "❌ Not Loaded");
 console.log("orderRoutes:", orderRoutes ? "✅ Loaded" : "❌ Not Loaded");
 console.log("mpesaRoutes:", mpesaRoutes ? "✅ Loaded" : "❌ Not Loaded");
 
-// ✅ M-Pesa Routes
-app.use("/mpesa", mpesaRoutes); // ✅ Register M-Pesa routes
+// ✅ Register routes
+app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/mpesa", mpesaRoutes); // M-Pesa routes
 
-// ✅ Enhanced M-Pesa Callback Route with Validation and Logging
+// ✅ Preflight request handler for all routes
+app.options("*", cors(corsOptions));
+
+// ✅ M-Pesa Callback Route
 app.post("/mpesa/callback", (req, res) => {
   console.log("🔔 M-Pesa Callback Received:", req.body);
 
-  // Validate callback body
+  // Validate callback payload
   if (!req.body.Body || !req.body.Body.stkCallback) {
-    return res.status(400).json({ message: "Invalid callback data" });
+    return res.status(400).json({ message: "❌ Invalid callback data" });
   }
 
   const { stkCallback } = req.body.Body;
   console.log("✅ M-Pesa STK Callback Details:", stkCallback);
 
-  // ✅ You can store the response in the database or process it as needed
-  res.status(200).json({ message: "M-Pesa Callback Processed Successfully" });
+  // Process and store callback data here (e.g., save to database)
+  res.status(200).json({ message: "✅ Callback processed successfully" });
 });
 
-// ✅ Routes
-if (authRoutes) app.use("/api/auth", authRoutes);
-if (productRoutes) app.use("/api/products", productRoutes);
-if (cartRoutes) app.use("/api/cart", cartRoutes);
-if (orderRoutes) app.use("/api/orders", orderRoutes);
-
-// ✅ Default Route
+// ✅ Default route
 app.get("/", (req, res) => {
   res.status(200).json({ message: "🚀 API is running successfully!" });
 });
 
-// ✅ Error Handling Middleware
+// ✅ Error handling middleware
 app.use((err, req, res, next) => {
   console.error(`❌ Server Error: ${err.message}`);
   res.status(500).json({ message: "❌ Internal Server Error" });
 });
 
-// ✅ Start Server
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
@@ -102,8 +106,7 @@ process.on("unhandledRejection", (err) => {
   server.close(() => process.exit(1));
 });
 
-
-// ✅ Handle process termination (CTRL+C or kill command)
+// ✅ Handle process termination (e.g., CTRL+C)
 process.on("SIGTERM", () => {
   console.log("🔴 SIGTERM received. Shutting down gracefully...");
   server.close(() => process.exit(0));
