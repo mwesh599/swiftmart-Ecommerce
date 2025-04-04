@@ -40,7 +40,6 @@ app.use((req, res, next) => {
 });
 
 
-
 // ✅ Handle invalid JSON payloads
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
