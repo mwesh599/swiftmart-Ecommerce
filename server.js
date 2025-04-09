@@ -28,6 +28,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions)); // Apply CORS middleware
 
+
 // ✅ Middleware
 app.use(helmet()); // Security headers
 app.use(morgan("dev")); // Request logging
@@ -38,7 +39,6 @@ app.use((req, res, next) => {
   console.log(`📥 Incoming request: ${req.method} ${req.originalUrl}`);
   next();
 });
-
 
 // ✅ Handle invalid JSON payloads
 app.use((err, req, res, next) => {
@@ -110,3 +110,4 @@ process.on("SIGTERM", () => {
   console.log("🔴 SIGTERM received. Shutting down gracefully...");
   server.close(() => process.exit(0));
 });
+
